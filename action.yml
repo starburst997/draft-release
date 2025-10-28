@@ -1,0 +1,160 @@
+name: Update Draft Release
+description: Automatically update draft releases when PRs are merged, maintaining a cumulative changelog
+author: JD Boivin
+branding:
+  icon: git-merge
+  color: blue
+
+inputs:
+  token:
+    description: GitHub token for creating/updating releases and pushing tags
+    required: true
+  future-version:
+    description: The version to use for the new tag (without 'v' prefix, e.g., 1.2.3)
+    required: true
+  stable-version:
+    description: The latest stable version for changelog comparison (without 'v' prefix)
+    required: false
+    default: ''
+  pr-title:
+    description: Pull request title
+    required: false
+    default: ${{ github.event.pull_request.title }}
+  pr-number:
+    description: Pull request number
+    required: false
+    default: ${{ github.event.pull_request.number }}
+  pr-url:
+    description: Pull request URL
+    required: false
+    default: ${{ github.event.pull_request.html_url }}
+  pr-user:
+    description: Pull request author username
+    required: false
+    default: ${{ github.event.pull_request.user.login }}
+  merge-commit-sha:
+    description: Merge commit SHA to tag
+    required: false
+    default: ${{ github.event.pull_request.merge_commit_sha }}
+  repository:
+    description: Repository in format owner/repo
+    required: false
+    default: ${{ github.repository }}
+  skip-tagging:
+    description: Skip creating git tags (only update release)
+    required: false
+    default: 'false'
+
+outputs:
+  release-tag:
+    description: The tag that was created or updated
+    value: ${{ steps.update.outputs.release-tag }}
+  release-title:
+    description: The release title (vX.Y format)
+    value: ${{ steps.update.outputs.release-title }}
+  release-url:
+    description: URL to the draft release
+    value: ${{ steps.update.outputs.release-url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Update draft release
+      id: update
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        FUTURE_VERSION: ${{ inputs.future-version }}
+        STABLE_VERSION: ${{ inputs.stable-version }}
+        PR_TITLE: ${{ inputs.pr-title }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        PR_URL: ${{ inputs.pr-url }}
+        PR_USER: ${{ inputs.pr-user }}
+        MERGE_COMMIT: ${{ inputs.merge-commit-sha }}
+        REPOSITORY: ${{ inputs.repository }}
+        SKIP_TAGGING: ${{ inputs.skip-tagging }}
+      run: |
+        # Extract version components
+        FUTURE_VERSION_TAG="v${FUTURE_VERSION}"
+        STABLE_VERSION_TAG="v${STABLE_VERSION}"
+        # Extract vX.Y (no patch) for the title
+        RELEASE_TITLE="v$(echo "$FUTURE_VERSION" | cut -d. -f1-2)"
+
+        NEW_ENTRY="* ${PR_TITLE} by @${PR_USER} in ${PR_URL}"
+
+        REPO_URL="https://github.com/${REPOSITORY}"
+        if [ -n "$STABLE_VERSION" ] && [ "$STABLE_VERSION" != "v" ]; then
+          CHANGELOG_FOOTER="**Full Changelog**: ${REPO_URL}/compare/${STABLE_VERSION_TAG}...${FUTURE_VERSION_TAG}"
+        else
+          CHANGELOG_FOOTER="**Full Changelog**: ${REPO_URL}/commits/${FUTURE_VERSION_TAG}"
+        fi
+
+        # Tag the exact merge commit if not skipping
+        if [ "$SKIP_TAGGING" != "true" ] && [ -n "$MERGE_COMMIT" ]; then
+          if git tag "$FUTURE_VERSION_TAG" "$MERGE_COMMIT" 2>/dev/null; then
+            git push origin "$FUTURE_VERSION_TAG"
+            echo "✓ Tagged merge commit $MERGE_COMMIT with $FUTURE_VERSION_TAG"
+          else
+            echo "⚠ Tag $FUTURE_VERSION_TAG already exists, skipping tagging"
+          fi
+        fi
+
+        # Find existing draft release by title
+        EXISTING_DRAFT=$(gh release list --json tagName,name,isDraft --jq ".[] | select(.isDraft == true and .name == \"$RELEASE_TITLE\") | .tagName" || echo "")
+
+        if [ -n "$EXISTING_DRAFT" ]; then
+          # Get current body
+          CURRENT_BODY=$(gh release view "$EXISTING_DRAFT" --json body --jq '.body' || echo "")
+
+          # Remove old changelog footer if it exists
+          CURRENT_BODY=$(echo "$CURRENT_BODY" | sed '/^\*\*Full Changelog\*\*:/d')
+
+          # Remove trailing whitespace and newlines
+          CURRENT_BODY=$(printf '%s\n' "$CURRENT_BODY" | sed 's/[[:space:]]*$//' | sed -e :a -e '/^\s*$/{$d;N;ba' -e '}')
+
+          # Build new body
+          if echo "$CURRENT_BODY" | grep -q "## What's Changed"; then
+            # Append to existing list
+            echo "📝 Appending to existing draft release"
+            NEW_BODY="${CURRENT_BODY}
+        ${NEW_ENTRY}
+
+        ${CHANGELOG_FOOTER}"
+          else
+            # Add header and first entry
+            NEW_BODY="## What's Changed
+
+        ${NEW_ENTRY}
+
+        ${CHANGELOG_FOOTER}"
+          fi
+
+          # Update release
+          gh release edit "$EXISTING_DRAFT" \
+            --tag "$FUTURE_VERSION_TAG" \
+            --title "$RELEASE_TITLE" \
+            --notes "$NEW_BODY" \
+            --draft
+
+          RELEASE_URL=$(gh release view "$EXISTING_DRAFT" --json url --jq '.url')
+          echo "✓ Updated draft release $RELEASE_TITLE with tag $FUTURE_VERSION_TAG"
+        else
+          # Create new draft release
+          echo "📝 Creating new draft release"
+          gh release create "$FUTURE_VERSION_TAG" \
+            --title "$RELEASE_TITLE" \
+            --notes "## What's Changed
+
+        ${NEW_ENTRY}
+
+        ${CHANGELOG_FOOTER}" \
+            --draft
+
+          RELEASE_URL=$(gh release view "$FUTURE_VERSION_TAG" --json url --jq '.url')
+          echo "✓ Created draft release $RELEASE_TITLE with tag $FUTURE_VERSION_TAG"
+        fi
+
+        # Set outputs
+        echo "release-tag=$FUTURE_VERSION_TAG" >> $GITHUB_OUTPUT
+        echo "release-title=$RELEASE_TITLE" >> $GITHUB_OUTPUT
+        echo "release-url=$RELEASE_URL" >> $GITHUB_OUTPUT

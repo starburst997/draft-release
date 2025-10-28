@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Update Draft Release - GitHub Action</title>
+    <meta
+      name="description"
+      content="A GitHub Action that automatically updates draft releases when PRs are merged, maintaining a cumulative changelog with automatic versioning."
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        color: #d0d0d9;
+        background: #0c1018;
+        min-height: 100vh;
+      }
+
+      .hero-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100vh;
+        background: linear-gradient(135deg, #0c1018 0%, #191923 100%);
+        z-index: -1;
+      }
+
+      .hero-accent {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, #61afff20 0%, transparent 70%);
+        top: -300px;
+        left: 50%;
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      header {
+        padding: 2rem 0;
+        text-align: center;
+      }
+
+      .hero {
+        padding: 4rem 0 6rem;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(to right, #61afff, #98d280);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .tagline {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        color: #96969d;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+      }
+
+      .btn-primary {
+        background: #61afff;
+        color: #0c1018;
+        border: 1px solid #61afff;
+      }
+
+      .btn-primary:hover {
+        background: #7abfff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 30px rgba(97, 175, 255, 0.3);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: #d0d0d9;
+        border: 2px solid #3f3f3f;
+      }
+
+      .btn-secondary:hover {
+        background: #32373c;
+        border-color: #636669;
+      }
+
+      .features-section {
+        background: #141518;
+        border-top: 1px solid #3f3f3f;
+        border-bottom: 1px solid #3f3f3f;
+        padding: 5rem 0;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+      }
+
+      .feature {
+        text-align: center;
+        padding: 1.5rem;
+      }
+
+      .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: #32373c;
+        border: 1px solid #3f3f3f;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 1.8rem;
+      }
+
+      .feature h3 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        color: #61afff;
+      }
+
+      .feature p {
+        color: #96969d;
+        line-height: 1.7;
+        font-size: 0.95rem;
+      }
+
+      .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        color: #d0d0d9;
+        margin-bottom: 1rem;
+      }
+
+      .section-subtitle {
+        text-align: center;
+        color: #96969d;
+        font-size: 1.2rem;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .usage-section {
+        padding: 4rem 0;
+        background: #0c1018;
+      }
+
+      .code-block {
+        background: #141518;
+        border: 1px solid #3f3f3f;
+        border-radius: 10px;
+        padding: 2rem;
+        margin: 2rem auto;
+        max-width: 800px;
+        overflow-x: auto;
+      }
+
+      .code-block pre {
+        font-family: "Monaco", "Courier New", monospace;
+        font-size: 0.9rem;
+        color: #d0d0d9;
+        line-height: 1.6;
+      }
+
+      .code-block code {
+        color: #98d280;
+      }
+
+      /* Syntax highlighting */
+      .yaml-key {
+        color: #61afff;
+      }
+
+      .yaml-string {
+        color: #98d280;
+      }
+
+      .yaml-value {
+        color: #ffe169;
+      }
+
+      .yaml-comment {
+        color: #636669;
+        font-style: italic;
+      }
+
+      .yaml-variable {
+        color: #e18cf5;
+      }
+
+      .how-it-works-section {
+        background: #141518;
+        border-top: 1px solid #3f3f3f;
+        border-bottom: 1px solid #3f3f3f;
+        padding: 4rem 0;
+      }
+
+      .steps-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+      }
+
+      .step {
+        text-align: center;
+        padding: 1.5rem;
+        background: #0c1018;
+        border: 1px solid #3f3f3f;
+        border-radius: 10px;
+      }
+
+      .step-number {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #61afff, #98d280);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0c1018;
+      }
+
+      .step h3 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        color: #d0d0d9;
+      }
+
+      .step p {
+        color: #96969d;
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+
+      .reference-section {
+        background: #0c1018;
+        padding: 4rem 0;
+      }
+
+      .reference-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+
+      .reference-card {
+        background: #141518;
+        border: 1px solid #3f3f3f;
+        border-radius: 10px;
+        padding: 2rem;
+      }
+
+      .reference-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: #61afff;
+        border-bottom: 3px solid #61afff;
+        padding-bottom: 0.5rem;
+      }
+
+      .param-item {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #3f3f3f;
+      }
+
+      .param-item:last-child {
+        border-bottom: none;
+      }
+
+      .param-name {
+        font-family: "Monaco", monospace;
+        font-size: 0.95rem;
+        color: #98d280;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+
+      .param-desc {
+        font-size: 0.9rem;
+        color: #d0d0d9;
+        margin-bottom: 0.25rem;
+      }
+
+      .param-default {
+        font-size: 0.85rem;
+        color: #96969d;
+        font-style: italic;
+      }
+
+      .param-required {
+        display: inline-block;
+        background: #61afff;
+        color: #0c1018;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+        font-weight: 600;
+      }
+
+      footer {
+        background: #0c1018;
+        padding: 3rem 0;
+        text-align: center;
+        color: #96969d;
+        border-top: 1px solid #3f3f3f;
+      }
+
+      footer a {
+        color: #61afff;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      footer a:hover {
+        color: #98d280;
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2.5rem;
+        }
+
+        .tagline {
+          font-size: 1.2rem;
+        }
+
+        .features {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+
+        .cta-buttons {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hero-background">
+      <div class="hero-accent"></div>
+    </div>
+
+    <header>
+      <div class="container">
+        <nav>
+          <a
+            href="https://github.com/starburst997/draft-release"
+            class="btn btn-secondary"
+          >
+            View on GitHub →
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="container">
+        <h1>Update Draft Release</h1>
+        <p class="tagline">
+          Automatically update draft releases when PRs are merged. Maintain a
+          cumulative changelog with smart versioning and automatic tagging.
+        </p>
+        <div class="cta-buttons">
+          <a
+            href="https://github.com/starburst997/draft-release"
+            class="btn btn-primary"
+          >
+            Get Started
+          </a>
+          <a
+            href="https://github.com/starburst997/draft-release#readme"
+            class="btn btn-secondary"
+          >
+            Documentation
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <div class="container">
+        <h2 class="section-title">Release Management, Simplified</h2>
+        <p class="section-subtitle">
+          Focus on code, not changelog maintenance
+        </p>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">📝</div>
+            <h3>Cumulative Changelog</h3>
+            <p>
+              Automatically appends PR entries to existing draft releases,
+              building your release notes incrementally.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🏷️</div>
+            <h3>Automatic Tagging</h3>
+            <p>
+              Tags merge commits with version numbers and associates them with
+              the correct draft release.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🔢</div>
+            <h3>Smart Versioning</h3>
+            <p>
+              Groups all v1.2.x changes under a single v1.2 draft release for
+              easy management.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🔗</div>
+            <h3>Full Changelog Links</h3>
+            <p>
+              Generates comparison URLs between versions automatically for easy
+              code review.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">♻️</div>
+            <h3>Idempotent</h3>
+            <p>
+              Safe to run multiple times. Skips existing tags and gracefully
+              handles edge cases.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">⚙️</div>
+            <h3>Configurable</h3>
+            <p>
+              Override PR details, skip tagging, or customize behavior for your
+              specific workflow.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-it-works-section">
+      <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">
+          Seamless integration with your merge workflow
+        </p>
+
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h3>PR Merged</h3>
+            <p>When a PR is merged to your target branch</p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">2</div>
+            <h3>Tag Created</h3>
+            <p>Creates a git tag (e.g., v1.2.3) on the merge commit</p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">3</div>
+            <h3>Find/Create</h3>
+            <p>Looks for an existing draft release with title v1.2</p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">4</div>
+            <h3>Update</h3>
+            <p>Appends the PR info to the draft release body</p>
+          </div>
+
+          <div class="step">
+            <div class="step-number">5</div>
+            <h3>Associate</h3>
+            <p>Updates the release to use the latest version tag</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="usage-section">
+      <div class="container">
+        <h2 class="section-title">Quick Start</h2>
+        <p class="section-subtitle">
+          Add to your workflow in minutes
+        </p>
+
+        <div class="code-block">
+          <pre><code><span class="yaml-key">name:</span> <span class="yaml-string">Update Draft Release</span>
+<span class="yaml-key">on:</span>
+  <span class="yaml-key">pull_request:</span>
+    <span class="yaml-key">types:</span> <span class="yaml-value">[closed]</span>
+    <span class="yaml-key">branches:</span> <span class="yaml-value">[dev, main]</span>
+
+<span class="yaml-key">jobs:</span>
+  <span class="yaml-key">release:</span>
+    <span class="yaml-key">if:</span> <span class="yaml-variable">github.event.pull_request.merged == true</span>
+    <span class="yaml-key">runs-on:</span> <span class="yaml-value">ubuntu-latest</span>
+    <span class="yaml-key">steps:</span>
+      - <span class="yaml-key">uses:</span> <span class="yaml-value">actions/checkout@v4</span>
+        <span class="yaml-key">with:</span>
+          <span class="yaml-key">fetch-depth:</span> <span class="yaml-value">0</span>
+
+      - <span class="yaml-key">name:</span> <span class="yaml-string">Get version</span>
+        <span class="yaml-key">id:</span> <span class="yaml-value">version</span>
+        <span class="yaml-key">run:</span> <span class="yaml-value">|</span>
+          <span class="yaml-comment"># Your versioning logic here</span>
+          echo "future-version=1.2.3" >> $GITHUB_OUTPUT
+          echo "stable-version=1.2.0" >> $GITHUB_OUTPUT
+
+      - <span class="yaml-key">name:</span> <span class="yaml-string">Update draft release</span>
+        <span class="yaml-key">uses:</span> <span class="yaml-value">starburst997/draft-release@v1</span>
+        <span class="yaml-key">with:</span>
+          <span class="yaml-key">token:</span> <span class="yaml-variable">${{ secrets.GITHUB_TOKEN }}</span>
+          <span class="yaml-key">future-version:</span> <span class="yaml-variable">${{ steps.version.outputs.future-version }}</span>
+          <span class="yaml-key">stable-version:</span> <span class="yaml-variable">${{ steps.version.outputs.stable-version }}</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="reference-section">
+      <div class="container">
+        <h2 class="section-title">Reference</h2>
+        <p class="section-subtitle">
+          Complete action inputs and outputs
+        </p>
+
+        <div class="reference-grid">
+          <div class="reference-card">
+            <h3>Required Inputs</h3>
+
+            <div class="param-item">
+              <div class="param-name">
+                token<span class="param-required">REQUIRED</span>
+              </div>
+              <div class="param-desc">
+                GitHub token with repo and contents permissions
+              </div>
+            </div>
+
+            <div class="param-item">
+              <div class="param-name">
+                future-version<span class="param-required">REQUIRED</span>
+              </div>
+              <div class="param-desc">
+                Version for the new tag (without 'v', e.g., 1.2.3)
+              </div>
+            </div>
+          </div>
+
+          <div class="reference-card">
+            <h3>Optional Inputs</h3>
+
+            <div class="param-item">
+              <div class="param-name">stable-version</div>
+              <div class="param-desc">
+                Latest stable version for changelog comparison
+              </div>
+              <div class="param-default">Default: '' (empty)</div>
+            </div>
+
+            <div class="param-item">
+              <div class="param-name">skip-tagging</div>
+              <div class="param-desc">Skip git tag creation</div>
+              <div class="param-default">Default: false</div>
+            </div>
+
+            <div class="param-item">
+              <div class="param-name">pr-title</div>
+              <div class="param-desc">Pull request title</div>
+              <div class="param-default">Default: Auto-detected</div>
+            </div>
+
+            <div class="param-item">
+              <div class="param-name">pr-user</div>
+              <div class="param-desc">Pull request author</div>
+              <div class="param-default">Default: Auto-detected</div>
+            </div>
+          </div>
+
+          <div class="reference-card">
+            <h3>Outputs</h3>
+
+            <div class="param-item">
+              <div class="param-name">release-tag</div>
+              <div class="param-desc">
+                The tag that was created or updated (e.g., v1.2.3)
+              </div>
+            </div>
+
+            <div class="param-item">
+              <div class="param-name">release-title</div>
+              <div class="param-desc">The release title (e.g., v1.2)</div>
+            </div>
+
+            <div class="param-item">
+              <div class="param-name">release-url</div>
+              <div class="param-desc">URL to the draft release</div>
+            </div>
+          </div>
+
+          <div class="reference-card">
+            <h3>Example Output</h3>
+
+            <div class="param-item">
+              <div class="param-desc" style="font-family: Monaco, monospace; font-size: 0.85rem; line-height: 1.8; color: #98d280;">
+                ## What's Changed<br><br>
+                * Add user auth by @alice in #42<br>
+                * Fix login by @bob in #43<br>
+                * Update deps by @charlie in #44<br><br>
+                **Full Changelog**: v1.1.0...v1.2.3
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container">
+        <p>
+          <a href="https://github.com/starburst997/draft-release">GitHub</a>
+          •
+          <a href="https://github.com/starburst997/draft-release/issues"
+            >Issues</a
+          >
+          •
+          <a href="https://github.com/starburst997/draft-release/releases"
+            >Releases</a
+          >
+          •
+          <a href="https://github.com/starburst997/draft-release#readme"
+            >Documentation</a
+          >
+        </p>
+        <p style="margin-top: 1rem; color: #636669">Made by JD Boivin</p>
+      </div>
+    </footer>
+  </body>
+</html>
