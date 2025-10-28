@@ -138,7 +138,7 @@ runs:
             --notes "$NEW_BODY" \
             --draft
 
-          RELEASE_URL=$(gh release view "$EXISTING_DRAFT" --json url --jq '.url')
+          RELEASE_URL=$(gh release view "$FUTURE_VERSION_TAG" --json url --jq '.url')
           echo "✓ Updated draft release $RELEASE_TITLE with tag $FUTURE_VERSION_TAG"
         else
           # Create new draft release
