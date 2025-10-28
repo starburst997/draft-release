@@ -490,47 +490,6 @@
       </div>
     </section>
 
-    <section class="how-it-works-section">
-      <div class="container">
-        <h2 class="section-title">How It Works</h2>
-        <p class="section-subtitle">
-          Seamless integration with your merge workflow
-        </p>
-
-        <div class="steps-grid">
-          <div class="step">
-            <div class="step-number">1</div>
-            <h3>PR Merged</h3>
-            <p>When a PR is merged to your target branch</p>
-          </div>
-
-          <div class="step">
-            <div class="step-number">2</div>
-            <h3>Tag Created</h3>
-            <p>Creates a git tag (e.g., v1.2.3) on the merge commit</p>
-          </div>
-
-          <div class="step">
-            <div class="step-number">3</div>
-            <h3>Find/Create</h3>
-            <p>Looks for an existing draft release with title v1.2</p>
-          </div>
-
-          <div class="step">
-            <div class="step-number">4</div>
-            <h3>Update</h3>
-            <p>Appends the PR info to the draft release body</p>
-          </div>
-
-          <div class="step">
-            <div class="step-number">5</div>
-            <h3>Associate</h3>
-            <p>Updates the release to use the latest version tag</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section class="usage-section">
       <div class="container">
         <h2 class="section-title">Quick Start</h2>
@@ -566,7 +525,6 @@
         <span class="yaml-key">with:</span>
           <span class="yaml-key">future-version:</span> <span class="yaml-variable">${{ steps.version.outputs.future-version }}</span>
           <span class="yaml-key">stable-version:</span> <span class="yaml-variable">${{ steps.version.outputs.stable-version }}</span>
-          <span class="yaml-comment"># token: ${{ secrets.GITHUB_TOKEN }}  # Optional, uses default if not specified</span></code></pre>
         </div>
       </div>
     </section>
