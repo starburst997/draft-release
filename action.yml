@@ -87,6 +87,7 @@ runs:
         if [ -n "$STABLE_VERSION" ] && [ "$STABLE_VERSION" != "v" ]; then
           CHANGELOG_FOOTER="**Full Changelog**: ${REPO_URL}/compare/${STABLE_VERSION_TAG}...${FUTURE_VERSION_TAG}"
         else
+          echo "No Changelog URL"
           #CHANGELOG_FOOTER="**Full Changelog**: ${REPO_URL}/commits/${FUTURE_VERSION_TAG}"
         fi
 
