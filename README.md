@@ -38,7 +38,6 @@ jobs:
       - name: Update draft release
         uses: starburst997/draft-release@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           future-version: ${{ steps.version.outputs.future-version }}
           stable-version: ${{ steps.version.outputs.stable-version }}
 ```
@@ -60,35 +59,35 @@ Draft release titled **v1.2** with body:
 ```markdown
 ## What's Changed
 
-* Add user authentication by @alice in https://github.com/owner/repo/pull/42
-* Fix login redirect by @bob in https://github.com/owner/repo/pull/43
-* Update dependencies by @charlie in https://github.com/owner/repo/pull/44
+- Add user authentication by @alice in https://github.com/owner/repo/pull/42
+- Fix login redirect by @bob in https://github.com/owner/repo/pull/43
+- Update dependencies by @charlie in https://github.com/owner/repo/pull/44
 
 **Full Changelog**: https://github.com/owner/repo/compare/v1.1.0...v1.2.3
 ```
 
 ## Inputs
 
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `token` | Yes | - | GitHub token with repo and contents permissions |
-| `future-version` | Yes | - | Version for the new tag (without 'v', e.g., `1.2.3`) |
-| `stable-version` | No | `''` | Latest stable version for changelog comparison |
-| `pr-title` | No | Auto | Pull request title |
-| `pr-number` | No | Auto | Pull request number |
-| `pr-url` | No | Auto | Pull request URL |
-| `pr-user` | No | Auto | Pull request author |
-| `merge-commit-sha` | No | Auto | Merge commit to tag |
-| `repository` | No | Auto | Repository in `owner/repo` format |
-| `skip-tagging` | No | `false` | Skip git tag creation |
+| Input              | Required | Default               | Description                                          |
+| ------------------ | -------- | --------------------- | ---------------------------------------------------- |
+| `token`            | No       | `${{ github.token }}` | GitHub token with repo and contents permissions      |
+| `future-version`   | Yes      | -                     | Version for the new tag (without 'v', e.g., `1.2.3`) |
+| `stable-version`   | No       | `''`                  | Latest stable version for changelog comparison       |
+| `pr-title`         | No       | Auto                  | Pull request title                                   |
+| `pr-number`        | No       | Auto                  | Pull request number                                  |
+| `pr-url`           | No       | Auto                  | Pull request URL                                     |
+| `pr-user`          | No       | Auto                  | Pull request author                                  |
+| `merge-commit-sha` | No       | Auto                  | Merge commit to tag                                  |
+| `repository`       | No       | Auto                  | Repository in `owner/repo` format                    |
+| `skip-tagging`     | No       | `false`               | Skip git tag creation                                |
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
-| `release-tag` | The tag that was created or updated (e.g., `v1.2.3`) |
-| `release-title` | The release title (e.g., `v1.2`) |
-| `release-url` | URL to the draft release |
+| Output          | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `release-tag`   | The tag that was created or updated (e.g., `v1.2.3`) |
+| `release-title` | The release title (e.g., `v1.2`)                     |
+| `release-url`   | URL to the draft release                             |
 
 ## Integration with Auto-Version
 
@@ -102,7 +101,6 @@ Works seamlessly with [starburst997/auto-version](https://github.com/starburst99
 - name: Update draft release
   uses: starburst997/draft-release@v1
   with:
-    token: ${{ secrets.GITHUB_TOKEN }}
     future-version: ${{ steps.version.outputs.future-version }}
     stable-version: ${{ steps.version.outputs.stable-version }}
 ```
@@ -116,7 +114,6 @@ If you're managing tags separately:
 ```yaml
 - uses: starburst997/draft-release@v1
   with:
-    token: ${{ secrets.GITHUB_TOKEN }}
     future-version: 1.2.3
     skip-tagging: true
 ```
@@ -128,7 +125,6 @@ Override PR details for custom workflows:
 ```yaml
 - uses: starburst997/draft-release@v1
   with:
-    token: ${{ secrets.GITHUB_TOKEN }}
     future-version: 1.2.3
     pr-title: "Custom change description"
     pr-user: "bot-user"

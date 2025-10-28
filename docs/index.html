@@ -564,9 +564,9 @@
       - <span class="yaml-key">name:</span> <span class="yaml-string">Update draft release</span>
         <span class="yaml-key">uses:</span> <span class="yaml-value">starburst997/draft-release@v1</span>
         <span class="yaml-key">with:</span>
-          <span class="yaml-key">token:</span> <span class="yaml-variable">${{ secrets.GITHUB_TOKEN }}</span>
           <span class="yaml-key">future-version:</span> <span class="yaml-variable">${{ steps.version.outputs.future-version }}</span>
-          <span class="yaml-key">stable-version:</span> <span class="yaml-variable">${{ steps.version.outputs.stable-version }}</span></code></pre>
+          <span class="yaml-key">stable-version:</span> <span class="yaml-variable">${{ steps.version.outputs.stable-version }}</span>
+          <span class="yaml-comment"># token: ${{ secrets.GITHUB_TOKEN }}  # Optional, uses default if not specified</span></code></pre>
         </div>
       </div>
     </section>
@@ -584,15 +584,6 @@
 
             <div class="param-item">
               <div class="param-name">
-                token<span class="param-required">REQUIRED</span>
-              </div>
-              <div class="param-desc">
-                GitHub token with repo and contents permissions
-              </div>
-            </div>
-
-            <div class="param-item">
-              <div class="param-name">
                 future-version<span class="param-required">REQUIRED</span>
               </div>
               <div class="param-desc">
@@ -603,6 +594,14 @@
 
           <div class="reference-card">
             <h3>Optional Inputs</h3>
+
+            <div class="param-item">
+              <div class="param-name">token</div>
+              <div class="param-desc">
+                GitHub token with repo and contents permissions
+              </div>
+              <div class="param-default">Default: ${{ github.token }}</div>
+            </div>
 
             <div class="param-item">
               <div class="param-name">stable-version</div>

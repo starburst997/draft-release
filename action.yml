@@ -8,14 +8,15 @@ branding:
 inputs:
   token:
     description: GitHub token for creating/updating releases and pushing tags
-    required: true
+    required: false
+    default: ${{ github.token }}
   future-version:
     description: The version to use for the new tag (without 'v' prefix, e.g., 1.2.3)
     required: true
   stable-version:
     description: The latest stable version for changelog comparison (without 'v' prefix)
     required: false
-    default: ''
+    default: ""
   pr-title:
     description: Pull request title
     required: false
@@ -43,7 +44,7 @@ inputs:
   skip-tagging:
     description: Skip creating git tags (only update release)
     required: false
-    default: 'false'
+    default: "false"
 
 outputs:
   release-tag:
@@ -86,7 +87,7 @@ runs:
         if [ -n "$STABLE_VERSION" ] && [ "$STABLE_VERSION" != "v" ]; then
           CHANGELOG_FOOTER="**Full Changelog**: ${REPO_URL}/compare/${STABLE_VERSION_TAG}...${FUTURE_VERSION_TAG}"
         else
-          CHANGELOG_FOOTER="**Full Changelog**: ${REPO_URL}/commits/${FUTURE_VERSION_TAG}"
+          #CHANGELOG_FOOTER="**Full Changelog**: ${REPO_URL}/commits/${FUTURE_VERSION_TAG}"
         fi
 
         # Tag the exact merge commit if not skipping
